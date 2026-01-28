@@ -12,7 +12,7 @@ import {
   renderFeedbackDetail,
   renderSystemStatus,
 } from '../utils/commands.js';
-import type { AnyFeedback, Clarification, Feedback } from '../types/index.js';
+import type { Clarification, Feedback } from '../types/index.js';
 import { startScheduler, stopScheduler, getScheduler } from '../core/scheduler.js';
 import { listPendingFeedbacks, loadToolStatus } from '../storage/index.js';
 import { aiAdapter } from '../executors/ai-adapter.js';
@@ -30,56 +30,50 @@ program
  * 提交反馈命令
  */
 program
-  .command('feedback <message>')
-  .description('提交用户反馈或需求')
-  .option('-s, --scope <type>', '项目范围', 'backend')
-  .option('-t, --type <type>', '反馈类型', 'clarification')
-  .action(async (message: string, options: { scope: string; type: string }) => {
-    CLIOutput.title('提交反馈');
+  .command('new <message>')
+  .alias('n')
+  .description('提交需求')
+  .option('-s, --scope <type>', '项目范围 (b/f/a)', 'backend')
+  .action(async (message: string, options: { scope: string }) => {
+    CLIOutput.title('提交需求');
 
     const feedbackId = generateFeedbackId();
 
-    let feedback: AnyFeedback;
-    if (options.type === 'clarification') {
-      feedback = {
-        id: feedbackId,
-        type: 'clarification',
-        status: 'pending',
-        userInput: message,
-        projectScope: options.scope as 'backend' | 'frontend' | 'fullstack',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Clarification;
-    } else {
-      feedback = {
-        id: feedbackId,
-        type: 'feedback',
-        status: 'pending',
-        userInput: message,
-        projectScope: options.scope as 'backend' | 'frontend' | 'fullstack',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Feedback;
-    }
+    // 根据 scope 简写转换
+    const scopeMap: Record<string, 'backend' | 'frontend' | 'fullstack'> = {
+      'b': 'backend',
+      'f': 'frontend',
+      'a': 'fullstack',
+    };
+    const projectScope = scopeMap[options.scope] || options.scope as 'backend' | 'frontend' | 'fullstack';
+
+    const feedback: Feedback = {
+      id: feedbackId,
+      type: 'feedback',
+      status: 'pending',
+      userInput: message,
+      projectScope,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Feedback;
 
     await saveFeedback(feedback);
 
-    CLIOutput.success('反馈已提交');
+    CLIOutput.success('需求已提交');
     CLIOutput.keyValue('ID', feedbackId);
-    CLIOutput.keyValue('类型', options.type === 'clarification' ? '需求澄清' : '需求开发');
-    CLIOutput.keyValue('项目范围', options.scope);
   });
 
 /**
- * 列出反馈命令
+ * 列出命令
  */
 program
-  .command('list')
-  .description('查看反馈列表')
-  .option('-d, --date <date>', '指定日期 (YYYY-MM-DD)', new Date().toISOString().slice(0, 10))
-  .option('--all', '显示所有状态')
-  .action(async (options: { date: string; all: boolean }) => {
-    const feedbacks = await listFeedbacksByDate(options.date);
+  .command('ls')
+  .alias('l')
+  .description('列表')
+  .option('-d, --date <date>', '日期')
+  .action(async (options: { date: string }) => {
+    const date = options.date || new Date().toISOString().slice(0, 10);
+    const feedbacks = await listFeedbacksByDate(date);
     renderFeedbackList(feedbacks);
   });
 
@@ -87,15 +81,75 @@ program
  * 查看详情命令
  */
 program
-  .command('show <feedbackId>')
-  .description('查看反馈详情')
-  .action(async (feedbackId: string) => {
-    const feedback = await loadFeedback(feedbackId);
+  .command('info [id]')
+  .alias('i')
+  .description('详情')
+  .action(async (id: string | undefined) => {
+    if (!id) {
+      const feedbacks = await listFeedbacksByDate(new Date().toISOString().slice(0, 10));
+      if (feedbacks.length > 0) {
+        id = feedbacks[0].id;
+      } else {
+        CLIOutput.error('没有找到需求');
+        return;
+      }
+    }
+
+    const feedback = await loadFeedback(id);
     if (!feedback) {
-      CLIOutput.error(`找不到反馈: ${feedbackId}`);
+      CLIOutput.error(`找不到: ${id}`);
       return;
     }
     renderFeedbackDetail(feedback);
+  });
+
+/**
+ * 启动命令
+ */
+program
+  .command('run')
+  .alias('r')
+  .description('启动调度器')
+  .option('-d, --daemon', '守护模式')
+  .action(async (options: { daemon: boolean }) => {
+    CLIOutput.title('启动调度器');
+
+    await startScheduler();
+
+    CLIOutput.success('调度器已启动');
+
+    if (options.daemon) {
+      console.log('\n按 Ctrl+C 停止...');
+
+      process.on('SIGINT', async () => {
+        console.log('\n');
+        CLIOutput.info('停止调度器...');
+        await stopScheduler();
+        process.exit(0);
+      });
+
+      await new Promise(() => {});
+    }
+  });
+
+/**
+ * 状态命令
+ */
+program
+  .command('st')
+  .description('状态')
+  .action(async () => {
+    const scheduler = getScheduler();
+    const pending = await listPendingFeedbacks();
+    const tools = await loadToolStatus();
+
+    renderSystemStatus({
+      schedulerRunning: scheduler.isRunning(),
+      pendingClarifications: pending.clarifications.length,
+      pendingFeedbacks: pending.feedbacks.length,
+      activeTasks: scheduler.getActiveTaskCount(),
+      tools,
+    });
   });
 
 /**
