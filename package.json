@@ -1,0 +1,53 @@
+{
+  "name": "ai-worker-system",
+  "version": "1.0.1",
+  "description": "24h AI Worker System - AI Agent 调度系统",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ai-worker": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint src",
+    "format": "prettier --write src"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "scheduler",
+    "sdd"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1",
+    "table": "^6.8.1",
+    "youtubei.js": "^16.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

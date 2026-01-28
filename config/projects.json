@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "backend": {
+      "name": "后端项目",
+      "path": "./workspace/backend",
+      "constitutionPath": "storage/constitution/backend.md"
+    },
+    "frontend": {
+      "name": "前端项目",
+      "path": "./workspace/frontend",
+      "constitutionPath": "storage/constitution/frontend.md"
+    }
+  }
+}

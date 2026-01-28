@@ -1,0 +1,29 @@
+{
+  "tools": [
+    {
+      "name": "claude",
+      "command": "claude",
+      "args": ["--print"],
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "name": "gemini",
+      "command": "gemini-cli",
+      "args": ["-p"],
+      "enabled": false,
+      "priority": 2
+    },
+    {
+      "name": "cursor",
+      "command": "cursor",
+      "args": ["--agent", "--print"],
+      "enabled": false,
+      "priority": 3
+    }
+  ],
+  "maxRetries": 3,
+  "retryDelayMs": 1000,
+  "failureCooldownMs": 300000,
+  "defaultTool": "claude"
+}

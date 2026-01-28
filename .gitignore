@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+storage/feedbacks/*
+!storage/feedbacks/.gitkeep
+storage/agent-status/*
+!storage/agent-status/.gitkeep
+.env
